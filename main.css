@@ -1,0 +1,22 @@
+.calendar-wrapper {
+    position: relative;
+}
+
+#date-picker {
+    opacity: 0;  /* Tornar o input invisível */
+    pointer-events: none;  /* Impedir que o input receba cliques diretamente */
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.clickable-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}

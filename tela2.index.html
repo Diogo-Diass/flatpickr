@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flatpickr Multiple and Range</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        #datePicker {
+            width: 100%;
+            max-width: 300px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .botao-ativo, .botao-inativo {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .botao-ativo {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        .botao-inativo {
+            background-color: #ddd;
+            color: #333;
+        }
+
+        .switch_diario {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch_diario input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider_diario {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider_diario:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider_diario {
+            background-color: #007BFF;
+        }
+
+        input:checked + .slider_diario:before {
+            transform: translateX(26px);
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .div-interna-cards-data {
+            background-color: #ffffff;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .span-de-datas {
+            background-color: #780000;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .excluir-datas-selecionada {
+            background-color: #ff0000;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #savedRanges {
+            margin-top: 20px;
+        }
+
+        .lista-ranges {
+            background-color: #780000;
+            color: white;
+            height: 2em;
+            text-align: center;
+            padding-top: 14px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<input type="text" id="datePicker">
+<div id="savedRanges"></div> <!-- Div para exibir os ranges salvos -->
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    let datePicker = document.getElementById('datePicker');
+    let flatpickrInstance;
+    let mode = 'multiple';  // Variável para armazenar o modo atual
+    let selectedDates = [];  // Array para armazenar as datas selecionadas
+    let dataSelecionada = [];
+
+    function initializeFlatpickr(shouldOpen = false) {
+        if (flatpickrInstance) {
+            selectedDates = flatpickrInstance.selectedDates;  // Armazena as datas selecionadas
+            flatpickrInstance.destroy();
+        }
+
+        flatpickrInstance = flatpickr(datePicker, {
+            mode: mode,
+            dateFormat: "d/m/Y",
+            defaultDate: selectedDates,  // Configura as datas selecionadas
+            onReady: function(selectedDates, dateStr, instance) {
+                let botao = document.createElement("button");
+                botao.id = "btn-periodo-calendar";
+                botao.classList.add("botao-inativo");
+                botao.innerHTML = "Período";
+                botao.addEventListener("click", function() {
+                    mode = "range";
+                    instance.config.mode = mode;
+                    initializeFlatpickr(true);
+                });
+
+                let botaoMultiplo = document.createElement("button");
+                botaoMultiplo.id = "btn-multiplo-calendar";
+                botaoMultiplo.classList.add("botao-inativo");
+                botaoMultiplo.innerHTML = "Dias";
+                botaoMultiplo.addEventListener("click", function() {
+                    mode = "multiple";
+                    instance.config.mode = mode;
+                    initializeFlatpickr(true);
+                });
+
+                let divCalendar = document.createElement("div");
+                let divButtons = document.createElement("div");
+                divButtons.appendChild(botaoMultiplo);
+                divButtons.appendChild(botao);
+                divCalendar.appendChild(divButtons);
+
+                if (mode === "multiple") {
+                    botaoMultiplo.classList.add("botao-ativo");
+                    botao.classList.add("botao-inativo");
+                } else {
+                    botao.classList.add("botao-ativo");
+                    botaoMultiplo.classList.add("botao-inativo");
+                    let spanInfo = document.createElement("span");
+                    spanInfo.innerHTML = "Combinar datas";
+                    divCalendar.appendChild(spanInfo);
+
+                    let switchCalendar = document.createElement("div");
+                    switchCalendar.style.display = "flex";
+                    switchCalendar.style.alignItems = "center";
+
+                    let switchLabel = document.createElement("label");
+                    switchLabel.classList.add("switch_diario");
+
+                    let switchInput = document.createElement("input");
+                    switchInput.type = "checkbox";
+                    switchInput.setAttribute("id", "switchRange");
+
+                    let switchSlider = document.createElement("span");
+                    switchSlider.classList.add("slider_diario", "round");
+
+                    switchLabel.appendChild(switchInput);
+                    switchLabel.appendChild(switchSlider);
+                    switchCalendar.appendChild(switchLabel);
+                    divCalendar.appendChild(switchCalendar);
+
+                    let btnAdd = document.createElement("button")
+                    btnAdd.innerHTML = "+"
+                    btnAdd.classList.add("botao-inativo")
+
+                    btnAdd.addEventListener("click", function(){
+                        adicionarRange();
+                    })
+
+                    divButtons.appendChild(btnAdd)
+                }
+                instance.calendarContainer.appendChild(divCalendar);
+            },
+            onChange: function(dates) {
+                dataSelecionada = dates;  // Armazena as datas selecionadas
+
+                if (mode === "range" && dates.length === 2) {
+                    let startDate = dates[0];
+                    let endDate = dates[1];
+
+                    while (startDate <= endDate) {
+                        selectedDates.push(new Date(startDate));
+                        startDate.setDate(startDate.getDate() + 1);
+                    }
+                } else {
+                    selectedDates = dates;
+                }
+
+                let switchInput = document.getElementById('switchRange');
+                if (switchInput && switchInput.checked) {
+                    if (dates.length === 2) {
+                        let span = document.createElement("span");
+                        span.innerHTML = dates[0].toLocaleDateString() + " até " + dates[1].toLocaleDateString();
+
+                        let divInterna = document.createElement("div");
+                        divInterna.classList.add("lista-ranges");
+                        divInterna.appendChild(span);
+                        document.getElementById("savedRanges").appendChild(divInterna);
+                    }
+                }
+            }
+        });
+
+        if (shouldOpen) {
+            flatpickrInstance.open();
+        }
+    }
+
+    function adicionarRange() {
+        // Função para adicionar um range de datas
+    }
+
+    // Inicializa o Flatpickr
+    initializeFlatpickr();
+</script>
+
+</body>
+</html>

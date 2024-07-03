@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flatpickr Múltiplos Meses</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        .flatpickr-monthSelect-month.selected {
+            background-color: red;
+            color: white;
+        }
+
+        .selected-months .selected-month {
+            display: inline-block;
+            margin: 5px;
+            padding: 5px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            position: relative;
+            padding-right: 25px;
+            top: 20em;
+        }
+
+        .selected-months .selected-month button {
+            position: absolute;
+            right: 5px;
+            top: 2px;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body>
+
+<input type="text" id="monthPicker">
+<div class="selected-months" id="selectedMonthsContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let selectedMonths = [];
+        let calendarInstance;
+        let arrayDias = [];
+
+        const monthPicker = flatpickr("#monthPicker", {
+            plugins: [
+                new monthSelectPlugin({
+                    shorthand: true,
+                    dateFormat: "m.y",
+                    altFormat: "F Y",
+                    theme: "dark"
+                })
+            ],
+            onChange: function(selectedDates, dateStr, instance) {
+                const selectedMonth = selectedDates[0];
+
+                let mes = selectedMonth.getMonth() + 1;
+                let ano = selectedMonth.getFullYear();
+
+                let diaCompleto = ano + (mes < 10 ? "0" : '') + mes;
+
+                if (arrayDias.includes(diaCompleto)) {
+                    // Remove o diaCompleto do arrayDias se ele já existir
+                    arrayDias = arrayDias.filter(dia => dia !== diaCompleto);
+                } else {
+                    // Adiciona o diaCompleto ao arrayDias se ele não existir
+                    arrayDias.push(diaCompleto);
+                }
+
+                window.listaDiaria = arrayDias
+
+                updateSelectedMonthsDisplay();
+                highlightSelectedMonths(instance);
+
+                // Manter o calendário aberto após a seleção
+                setTimeout(() => {
+                    instance.open();
+                }, 0);
+            },
+            onReady: function(selectedDates, dateStr, instance) {
+                highlightSelectedMonths(instance);
+                calendarInstance = instance;
+            },
+            onOpen: function(selectedDates, dateStr, instance) {
+                highlightSelectedMonths(instance);
+            },
+            onYearChange: function(selectedDates, dateStr, instance) {
+                highlightSelectedMonths(instance);
+            },
+            onMonthChange: function(selectedDates, dateStr, instance) {
+                highlightSelectedMonths(instance);
+            }
+        });
+
+        function updateSelectedMonthsDisplay() {
+            const selectedMonthsContainer = document.getElementById("selectedMonthsContainer");
+            selectedMonthsContainer.innerHTML = "";
+
+            arrayDias.forEach(diaCompleto => {
+                let span = document.createElement("span");
+                span.classList.add("selected-month");
+
+                let botaoExcluir = document.createElement("button");
+                botaoExcluir.innerHTML = "x";
+
+                let ano = diaCompleto.substring(0, 4);
+                let mes = diaCompleto.substring(4, 6);
+
+                let dataFormat = mes + "/" + ano;
+
+                span.innerHTML = dataFormat;
+                span.appendChild(botaoExcluir);
+
+                botaoExcluir.addEventListener("click", function() {
+                    arrayDias = arrayDias.filter(dia => dia !== diaCompleto);
+                    updateSelectedMonthsDisplay();
+                    highlightSelectedMonths(calendarInstance);
+
+                    window.listaDiaria = arrayDias
+
+                    // Manter o calendário aberto após a exclusão
+                    setTimeout(() => {
+                        calendarInstance.open();
+                    }, 0);
+                });
+
+                selectedMonthsContainer.appendChild(span);
+            });
+        }
+
+        function highlightSelectedMonths(instance) {
+            setTimeout(() => {
+                const monthsElements = instance.calendarContainer.querySelectorAll(".flatpickr-monthSelect-month");
+                monthsElements.forEach(monthElement => {
+                    const monthYear = monthElement.dateObj;
+                    const diaCompleto = monthYear.getFullYear() + (monthYear.getMonth() + 1 < 10 ? "0" : '') + (monthYear.getMonth() + 1);
+                    if (arrayDias.includes(diaCompleto)) {
+                        monthElement.classList.add("selected");
+                    } else {
+                        monthElement.classList.remove("selected");
+                    }
+                });
+            }, 0);
+        }
+    });
+</script>
+
+</body>
+</html>
